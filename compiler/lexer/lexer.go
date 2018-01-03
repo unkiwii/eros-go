@@ -56,18 +56,22 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		l.token = nil
 
 	case '"':
-		//TODO: read until another " is found
-		l.token = nil
+		l.source.SkipRune() // skip first '"'
+		value, err := l.source.ReadWhile(isInsideString)
+		if err != nil {
+			return nil, err
+		}
+		l.token = token.New(token.String, value)
 
 	default:
 		if unicode.IsDigit(r) {
-			value, err := l.source.ReadWhile(unicode.IsDigit)
+			value, err := l.source.ReadWhile(isNumber)
 			if err != nil {
 				return nil, err
 			}
 			l.token = token.New(token.Number, value)
 		} else if unicode.IsLetter(r) {
-			value, err := l.source.ReadWhile(func(r rune) bool { return unicode.IsLetter(r) || r == '_' })
+			value, err := l.source.ReadWhile(isIdentifier)
 			if err != nil {
 				return nil, err
 			}
@@ -76,4 +80,16 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 	}
 
 	return l.token, nil
+}
+
+func isInsideString(r rune) bool {
+	return r != '"'
+}
+
+func isNumber(r rune) bool {
+	return unicode.IsDigit(r)
+}
+
+func isIdentifier(r rune) bool {
+	return unicode.IsLetter(r) || r == '_'
 }

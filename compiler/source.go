@@ -36,9 +36,12 @@ func (s *Source) ReadRune() (r rune, err error) {
 	return s.currentRune, nil
 }
 
+func (s *Source) SkipRune() {
+	_, _ = s.ReadRune()
+}
+
 func (s *Source) ReadWhile(condition func(rune) bool) (value string, err error) {
-	r := s.currentRune
-	err = nil
+	r, err := s.currentRune, nil
 	for condition(r) && err == nil {
 		value += string(s.currentRune)
 		r, err = s.ReadRune()
