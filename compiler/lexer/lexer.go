@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"fmt"
+	"unicode"
 
 	"github.com/unkiwii/eros-go/compiler"
 	"github.com/unkiwii/eros-go/compiler/token"
@@ -21,44 +21,58 @@ func (l *Lexer) Close() error {
 }
 
 func (l *Lexer) NextToken() (*token.Token, error) {
-	txt, size, err := l.source.Read()
+	r, err := l.source.ReadRune()
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("read: '%s' (%d)\n", txt, size)
-
-	switch txt {
-	case " ":
+	switch r {
+	case 0:
+		l.token = token.Simple(token.EOF)
+	case ' ':
 		l.token = token.Simple(token.Space)
-	case "#":
+	case '#':
 		l.token = token.Simple(token.Numeral)
-	case "=":
+	case '=':
 		l.token = token.Simple(token.Equal)
-	case ".":
+	case '.':
 		l.token = token.Simple(token.Dot)
-	case ",":
+	case ',':
 		l.token = token.Simple(token.Comma)
-	case "[":
+	case '[':
 		l.token = token.Simple(token.RightBracket)
-	case "]":
+	case ']':
 		l.token = token.Simple(token.LeftBracket)
-	case "(":
+	case '(':
 		l.token = token.Simple(token.RightParen)
-	case ")":
+	case ')':
 		l.token = token.Simple(token.LeftParen)
-	case "{":
+	case '{':
 		l.token = token.Simple(token.RightBrace)
-	case "}":
+	case '}':
 		l.token = token.Simple(token.LeftBrace)
-	case ":":
-		l.token = token.Simple(token.Comma)
+	case ':':
+		//TODO: read next token, if = then Set, if other then Illegal
+		l.token = nil
+
+	case '"':
+		//TODO: read until another " is found
+		l.token = nil
 
 	default:
-		// if is number
-		//   read number
-		// else if is alpha
-		//   read identifier
+		if unicode.IsDigit(r) {
+			value, err := l.source.ReadWhile(unicode.IsDigit)
+			if err != nil {
+				return nil, err
+			}
+			l.token = token.New(token.Number, value)
+		} else if unicode.IsLetter(r) {
+			value, err := l.source.ReadWhile(func(r rune) bool { return unicode.IsLetter(r) || r == '_' })
+			if err != nil {
+				return nil, err
+			}
+			l.token = token.New(token.Identifier, value)
+		}
 	}
 
 	return l.token, nil

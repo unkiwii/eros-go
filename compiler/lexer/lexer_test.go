@@ -102,7 +102,7 @@ func testLexerCase(t *testing.T, input string, tokens ...*token.Token) {
 	var err error
 	for _, expected := range tokens {
 		if got, err = lexer.NextToken(); err != nil {
-			t.Fail()
+			t.Error("error with lexer.NextToken()", err)
 		}
 		if expected.Type() != got.Type() {
 			t.Errorf("testing: '%s', expected type '%s', but got '%s'", input, expected.Type(), got.Type())

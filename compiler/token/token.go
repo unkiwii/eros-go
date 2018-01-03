@@ -33,6 +33,7 @@ type Token struct {
 }
 
 var simples = map[Type]*Token{
+	EOF:          &Token{EOF, "<eof>"},
 	Space:        &Token{Space, " "},
 	Numeral:      &Token{Numeral, "#"},
 	Equal:        &Token{Equal, "="},
@@ -49,6 +50,8 @@ var simples = map[Type]*Token{
 
 func (t Type) String() string {
 	switch t {
+	case EOF:
+		return "<eof>"
 	case Illegal:
 		return "<illegal>"
 	case Number:
@@ -71,7 +74,7 @@ func (t *Token) Type() Type {
 
 func (t *Token) Value() string {
 	if t == nil {
-		return "<illegal>"
+		return "[illegal]"
 	}
 	return t.val
 }
