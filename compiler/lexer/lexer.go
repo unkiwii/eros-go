@@ -1,6 +1,8 @@
 package lexer
 
 import (
+	// "fmt"
+	"io"
 	"unicode"
 
 	"github.com/unkiwii/eros-go/compiler"
@@ -21,8 +23,11 @@ func (l *Lexer) Close() error {
 }
 
 func (l *Lexer) NextToken() (*token.Token, error) {
-	r, err := l.source.ReadRune()
+	r, _, err := l.source.ReadRune()
 	if err != nil {
+		if err == io.EOF {
+			return token.Simple(token.EOF), nil
+		}
 		return nil, err
 	}
 
@@ -51,45 +56,68 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		l.token = token.Simple(token.RightBrace)
 	case '}':
 		l.token = token.Simple(token.LeftBrace)
+
 	case ':':
-		//TODO: read next token, if = then Set, if other then Illegal
-		l.token = nil
+		r, _, err = l.source.ReadRune()
+		if err != nil {
+			if err == io.EOF {
+				return token.Simple(token.EOF), nil
+			}
+			return nil, err
+		}
+		if r == '=' {
+			l.token = token.Simple(token.Set)
+		}
 
 	case '"':
-		l.source.SkipRune() // skip first '"'
+		// l.source.Discard(1) // skip first '"'
 		value, err := l.source.ReadWhile(isInsideString)
 		if err != nil {
+			if err == io.EOF {
+				return token.Simple(token.EOF), nil
+			}
 			return nil, err
 		}
 		l.token = token.New(token.String, value)
 
 	default:
+		err = l.source.UnreadRune()
+		if err != nil {
+			return nil, err
+		}
 		if unicode.IsDigit(r) {
-			value, err := l.source.ReadWhile(isNumber)
-			if err != nil {
-				return nil, err
-			}
-			l.token = token.New(token.Number, value)
+			l.token, err = l.readTokenWhile(isPartOfNumber, token.Number)
 		} else if unicode.IsLetter(r) {
-			value, err := l.source.ReadWhile(isIdentifier)
-			if err != nil {
-				return nil, err
-			}
-			l.token = token.New(token.Identifier, value)
+			l.token, err = l.readTokenWhile(isPartOfIdentifier, token.Identifier)
 		}
 	}
 
-	return l.token, nil
+	return l.token, err
 }
 
 func isInsideString(r rune) bool {
 	return r != '"'
 }
 
-func isNumber(r rune) bool {
+func isPartOfNumber(r rune) bool {
 	return unicode.IsDigit(r)
 }
 
-func isIdentifier(r rune) bool {
-	return unicode.IsLetter(r) || r == '_'
+func isPartOfIdentifier(r rune) bool {
+	return !unicode.IsSpace(r) && unicode.IsLetter(r)
+}
+
+func (l *Lexer) readTokenWhile(condition func(rune) bool, typ token.Type) (*token.Token, error) {
+	value, err := l.source.ReadWhile(condition)
+	if err != nil {
+		if err == io.EOF {
+			return token.Simple(token.EOF), nil
+		}
+		return nil, err
+	}
+	err = l.source.UnreadRune()
+	if err != nil {
+		return nil, err
+	}
+	return token.New(typ, value), nil
 }

@@ -52,6 +52,8 @@ func (t Type) String() string {
 	switch t {
 	case EOF:
 		return "<eof>"
+	case Space:
+		return "<space>"
 	case Illegal:
 		return "<illegal>"
 	case Number:

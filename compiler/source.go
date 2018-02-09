@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"bufio"
-	"fmt"
+	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -10,67 +10,55 @@ import (
 )
 
 type Source struct {
-	source      io.ReadCloser
-	scanner     *bufio.Scanner
-	runes       []rune
-	currentRune rune
+	source io.ReadCloser
+	reader *bufio.Reader
 }
 
 func (s *Source) Close() error {
 	return s.source.Close()
 }
 
-func (s *Source) ReadRune() (r rune, err error) {
-	if len(s.runes) == 0 {
-		if ok := s.scanner.Scan(); !ok {
-			if s.scanner.Err() != nil {
-				return 0, fmt.Errorf("failed to scan next token: %s", s.scanner.Err())
-			} else {
-				return 0, nil
-			}
-		}
-		s.runes = []rune(s.scanner.Text())
-	}
-	s.currentRune = s.runes[0]
-	s.runes = s.runes[1:]
-	return s.currentRune, nil
+func (s *Source) ReadRune() (r rune, size int, err error) {
+	return s.reader.ReadRune()
 }
 
-func (s *Source) SkipRune() {
-	_, _ = s.ReadRune()
+func (s *Source) PeekRune() (r rune, size int, err error) {
+	// TODO: implement
+	return 0, 0, nil
 }
 
-func (s *Source) ReadWhile(condition func(rune) bool) (value string, err error) {
-	r, err := s.currentRune, nil
-	for condition(r) && err == nil {
-		value += string(s.currentRune)
-		r, err = s.ReadRune()
+func (s *Source) UnreadRune() error {
+	return s.reader.UnreadRune()
+}
+
+func (s *Source) Discard(n int) (discarded int, err error) {
+	return s.reader.Discard(n)
+}
+
+func (s *Source) ReadWhile(condition func(rune) bool) (str string, err error) {
+	var buffer bytes.Buffer
+	for r, _, err := s.ReadRune(); condition(r) && err == nil; r, _, err = s.ReadRune() {
+		buffer.WriteRune(r)
 	}
-	return value, err
+	return buffer.String(), err
 }
 
 func NewSourceFile(filename string) (*Source, error) {
-	source, err := os.Open(filename)
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Source{
-		source:  source,
-		scanner: newScanner(source),
+		source: file,
+		reader: bufio.NewReader(file),
 	}, nil
 }
 
 func NewSource(str string) *Source {
-	source := ioutil.NopCloser(strings.NewReader(str))
+	r := ioutil.NopCloser(strings.NewReader(str))
 	return &Source{
-		source:  source,
-		scanner: newScanner(source),
+		source: r,
+		reader: bufio.NewReader(r),
 	}
-}
-
-func newScanner(reader io.Reader) *bufio.Scanner {
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanRunes)
-	return scanner
 }

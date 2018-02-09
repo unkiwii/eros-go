@@ -21,12 +21,12 @@ func TestNumber(t *testing.T) {
 }
 
 func TestIdentifier(t *testing.T) {
-	testLexerCase(t, "q_wertyuiopasdfghjklzxcvbnm",
-		token.New(token.Identifier, "q_wertyuiopasdfghjklzxcvbnm"),
+	testLexerCase(t, "qwertyuiopasdfghjklzxcvbnm",
+		token.New(token.Identifier, "qwertyuiopasdfghjklzxcvbnm"),
 		token.Simple(token.EOF))
 
-	testLexerCase(t, "Q_WERTYUIOPASDFGHJKLZXCVBNM",
-		token.New(token.Identifier, "Q_WERTYUIOPASDFGHJKLZXCVBNM"),
+	testLexerCase(t, "QWERTYUIOPASDFGHJKLZXCVBNM",
+		token.New(token.Identifier, "QWERTYUIOPASDFGHJKLZXCVBNM"),
 		token.Simple(token.EOF))
 
 	//TODO: add identifier tests (decimals, complex, fractionals)
@@ -104,11 +104,8 @@ func testLexerCase(t *testing.T, input string, tokens ...*token.Token) {
 		if got, err = lexer.NextToken(); err != nil {
 			t.Error("error with lexer.NextToken()", err)
 		}
-		if expected.Type() != got.Type() {
-			t.Errorf("testing: '%s', expected type '%s', but got '%s'", input, expected.Type(), got.Type())
-		}
-		if expected.Value() != got.Value() {
-			t.Errorf("testing: '%s', expected value '%s', but got '%s'", input, expected.Value(), got.Value())
+		if expected.Type() != got.Type() || expected.Value() != got.Value() {
+			t.Errorf("testing: '%s', expected '%s' %s, but got '%s' %s", input, expected.Value(), expected.Type(), got.Value(), got.Type())
 		}
 	}
 }
