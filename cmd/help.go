@@ -1,14 +1,12 @@
-package help
+package cmd
 
 import (
 	"fmt"
 	"os"
 	"text/template"
-
-	"github.com/unkiwii/eros-go/cmd/base"
 )
 
-var usageTemplate = `eros is a tool for managing eros source code.
+const helpTemplate = `eros is a tool for managing eros source code.
 
 Usage:
 
@@ -23,27 +21,35 @@ If no command is specified an interactive session is started.
 Use "eros help [command]" for more information about a command.
 `
 
-var helpTemplate = `usage: eros {{.Name}} {{.UsageLine}}
+const usageTemplate = `usage: eros {{.Name}} {{.UsageLine}}
 
 {{.Long}}
 `
 
-func Help(args []string) {
+var Help = &Command{
+	Run:       runHelpCommand,
+	Name:      "help",
+	UsageLine: "<command>",
+	Short:     "shows help for a given command",
+	Long:      `shows help for a given command`,
+}
+
+func runHelpCommand(helpCommand *Command, args []string) {
 	if len(args) == 0 {
-		PrintUsage()
+		PrintHelp()
 		return
 	}
 
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "usage: eros help <command>\n\nToo many arguments given.\n")
+		printTemplate(usageTemplate, helpCommand)
 		os.Exit(2)
 	}
 
 	arg := args[0]
 
-	for _, cmd := range base.Commands {
+	for _, cmd := range Commands {
 		if cmd.Name == arg {
-			printTemplate(helpTemplate, cmd)
+			printTemplate(usageTemplate, cmd)
 			return
 		}
 	}
@@ -51,8 +57,8 @@ func Help(args []string) {
 	UnknownCommand(arg)
 }
 
-func PrintUsage() {
-	printTemplate(usageTemplate, base.Commands)
+func PrintHelp() {
+	printTemplate(helpTemplate, Commands)
 }
 
 func UnknownCommand(cmd string) {

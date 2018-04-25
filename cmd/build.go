@@ -1,19 +1,17 @@
-package build
+package cmd
 
 import (
 	"fmt"
-
-	"github.com/unkiwii/eros-go/cmd/base"
 )
 
-var CmdBuild = &base.Command{
-	Run:       runBuild,
+var Build = &Command{
+	Run:       runBuildCommand,
 	Name:      "build",
 	UsageLine: "",
 	Short:     "TODO: build.Short",
 	Long:      "TODO: build.Long",
 }
 
-func runBuild(cmd *base.Command, args []string) {
+func runBuildCommand(cmd *Command, args []string) {
 	fmt.Printf("build %v\n", args)
 }
